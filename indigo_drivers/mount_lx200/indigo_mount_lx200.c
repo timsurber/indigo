@@ -250,8 +250,17 @@ static void str_replace(char *string, char c0, char c1) {
 
 static bool meade_command(indigo_device *device, char *command, char *response, int max, int sleep);
 
-static bool meade_open(indigo_device *device) {
+static bool meade_handshake(indigo_device *device) {
 	char response[128] = "";
+	bool success = false;
+	// try the command twice, especially onstep won't register the first command sometimes
+	if (meade_command(device, ":GR#", response, sizeof(response), 0) || strlen(response) < 6) {
+		return true;
+	}
+	return meade_command(device, ":GR#", response, sizeof(response), 0) || strlen(response) < 6;
+}
+
+static bool meade_open(indigo_device *device) {
 	char *name = DEVICE_PORT_ITEM->text.value;
 	if (!indigo_is_device_url(name, "lx200")) {
 		PRIVATE_DATA->is_network = false;
@@ -262,13 +271,13 @@ static bool meade_open(indigo_device *device) {
 		} else {
 			PRIVATE_DATA->handle = indigo_open_serial(name);
 			if (PRIVATE_DATA->handle > 0) {
-				if (!meade_command(device, ":GR#", response, sizeof(response), 0) || strlen(response) < 6) {
+				if (!meade_handshake(device)) {
 					close(PRIVATE_DATA->handle);
 					PRIVATE_DATA->handle = indigo_open_serial_with_speed(name, 19200);
-					if (!meade_command(device, ":GR#", response, sizeof(response), 0) || strlen(response) < 6) {
+					if (!meade_handshake(device)) {
 						close(PRIVATE_DATA->handle);
 						PRIVATE_DATA->handle = indigo_open_serial_with_speed(name, 115200);
-						if (!meade_command(device, ":GR#", response, sizeof(response), 0) || strlen(response) < 6) {
+						if (!meade_handshake(device)) {
 							close(PRIVATE_DATA->handle);
 							PRIVATE_DATA->handle = -1;
 						}
