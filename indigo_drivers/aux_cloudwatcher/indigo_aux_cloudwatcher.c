@@ -365,7 +365,7 @@ static bool aag_command(indigo_device *device, const char *command, char *respon
 				break;
 			}
 			if (PRIVATE_DATA->udp) {
-				result = read(PRIVATE_DATA->handle, response, MAX_LEN);
+				result = read(PRIVATE_DATA->handle, response, max);
 				if (result < 1) {
 					pthread_mutex_unlock(&PRIVATE_DATA->port_mutex);
 					INDIGO_DRIVER_ERROR(DRIVER_NAME, "Failed to read from %s -> %s (%d)", DEVICE_PORT_ITEM->text.value, strerror(errno), errno);
